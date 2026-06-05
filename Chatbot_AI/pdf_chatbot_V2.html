@@ -11,7 +11,7 @@
 <title>Advanced PDF RAG Chatbot</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
@@ -19,28 +19,30 @@
 <style nonce="pdf-chatbot-style">
 
 :root {
-  --page: #f5f4f0;
-  --panel: #ffffff;
-  --panel-soft: #f8f7f4;
-  --ink: #0e0e0c;
-  --ink-soft: #3d3d38;
-  --muted: #7a7a72;
-  --line: #e2e1db;
-  --line-dark: #0e0e0c;
-  --sidebar-bg: #0e0e0c;
-  --sidebar-text: #f5f4f0;
-  --sidebar-muted: rgba(245,244,240,0.45);
-  --sidebar-line: rgba(245,244,240,0.1);
-  --sidebar-hover: rgba(245,244,240,0.07);
-  --accent: #0e0e0c;
-  --shadow: 0 32px 80px rgba(0,0,0,0.1);
-  --shadow-soft: 0 8px 28px rgba(0,0,0,0.06);
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-  --font-display: 'Instrument Serif', Georgia, serif;
+  --page: transparent;
+  --panel: rgba(255,255,255,0.06);
+  --panel-soft: rgba(255,255,255,0.04);
+  --ink: rgba(255,255,255,0.93);
+  --ink-soft: rgba(255,255,255,0.55);
+  --muted: rgba(255,255,255,0.35);
+  --line: rgba(255,255,255,0.1);
+  --line-dark: #a78bfa;
+  --sidebar-bg: rgba(255,255,255,0.05);
+  --sidebar-text: rgba(255,255,255,0.93);
+  --sidebar-muted: rgba(255,255,255,0.45);
+  --sidebar-line: rgba(255,255,255,0.09);
+  --sidebar-hover: rgba(255,255,255,0.06);
+  --accent: #a78bfa;
+  --accent-dim: rgba(167,139,250,0.18);
+  --accent-border: rgba(167,139,250,0.38);
+  --shadow: 0 32px 80px rgba(0,0,0,0.5);
+  --shadow-soft: 0 8px 32px rgba(0,0,0,0.25);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+  --font-display: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', 'Cascadia Mono', Consolas, monospace;
   --radius: 16px;
-  --radius-sm: 10px;
+  --radius-sm: 12px;
   --radius-xs: 6px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -87,8 +89,8 @@
 }
 
 @keyframes borderPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(14,14,12,0); }
-  50%       { box-shadow: 0 0 0 3px rgba(14,14,12,0.08); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,109,247,0); }
+  50%       { box-shadow: 0 0 0 3px rgba(124,109,247,0.15); }
 }
 
 @keyframes grainScroll {
@@ -113,7 +115,12 @@
 /* ── BASE ── */
 body {
   font-family: var(--font-body);
-  background: var(--page);
+  background:
+    radial-gradient(ellipse at 15% 40%, rgba(139,92,246,0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(59,130,246,0.28) 0%, transparent 55%),
+    radial-gradient(ellipse at 60% 85%, rgba(167,139,250,0.22) 0%, transparent 50%),
+    linear-gradient(135deg, #07041a 0%, #100835 40%, #050d28 70%, #07041a 100%);
+  background-attachment: fixed;
   color: var(--ink);
   height: 100vh;
   overflow: hidden;
@@ -124,20 +131,26 @@ body {
 /* ── LAYOUT ── */
 .container {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 270px minmax(0, 1fr);
   height: 100vh;
   min-height: 0;
-  max-width: 1680px;
-  margin: 0 auto;
-  background: var(--panel);
-  box-shadow: var(--shadow);
+  width: 100%;
+  background: transparent;
   overflow: hidden;
   animation: fadeIn 0.4s var(--ease-out) forwards;
+  transition: grid-template-columns 0.3s var(--ease-out);
+}
+
+.container.sidebar-collapsed {
+  grid-template-columns: 0px minmax(0, 1fr);
 }
 
 /* ── SIDEBAR ── */
 .sidebar {
-  background: var(--sidebar-bg);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-right: 1px solid rgba(255,255,255,0.08);
   color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
@@ -168,7 +181,7 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 160px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(124,109,247,0.05) 0%, transparent 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -190,29 +203,28 @@ body {
 .brand-mark {
   width: 42px;
   height: 42px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--accent-border);
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: #ffffff;
-  color: #0e0e0c;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-style: italic;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
   flex-shrink: 0;
   transition: transform 0.3s var(--ease-spring), box-shadow 0.3s ease;
 }
 
 .brand-mark:hover {
   transform: rotate(-4deg) scale(1.05);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 6px 20px rgba(124,109,247,0.3);
 }
 
 .brand-copy h1 {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 400;
-  font-style: italic;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.1;
   color: var(--sidebar-text);
@@ -297,8 +309,8 @@ body {
   justify-content: center;
   gap: 8px;
   min-height: 50px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: transparent;
+  border: 1px solid rgba(124,109,247,0.25);
+  background: rgba(124,109,247,0.07);
   color: var(--sidebar-text);
   padding: 0 18px;
   border-radius: var(--radius-sm);
@@ -314,16 +326,16 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(124,109,247,0.15) 0%, transparent 60%);
   opacity: 0;
   transition: opacity 0.25s ease;
 }
 
 .upload-btn:hover {
-  border-color: rgba(255,255,255,0.4);
-  background: rgba(255,255,255,0.07);
+  border-color: rgba(124,109,247,0.55);
+  background: rgba(124,109,247,0.14);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 16px rgba(124,109,247,0.2);
 }
 
 .upload-btn:hover::before { opacity: 1; }
@@ -340,7 +352,7 @@ body {
 
 .upload-icon {
   font-size: 14px;
-  opacity: 0.7;
+  color: var(--accent);
   transition: transform 0.3s var(--ease-spring);
 }
 
@@ -401,44 +413,31 @@ body {
   min-height: 0;
   height: 100vh;
   overflow: hidden;
-  background: var(--panel);
+  background: transparent;
   position: relative;
   animation: slideInRight 0.5s 0.1s var(--ease-out) both;
-}
-
-/* Subtle dot grid background */
-.workspace::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-  z-index: 0;
-  mask-image: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0.3) 80%, transparent 100%);
 }
 
 .workspace > * { position: relative; z-index: 1; }
 
 /* ── TOPBAR ── */
 .topbar {
-  min-height: 78px;
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 0 36px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  padding: 0 32px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .topbar-title h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-style: italic;
-  font-weight: 400;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.1;
   color: var(--ink);
@@ -457,10 +456,12 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 999px;
   color: var(--ink-soft);
-  background: var(--panel);
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 7px 14px;
   font-size: 11px;
   font-weight: 500;
@@ -480,9 +481,9 @@ body {
 }
 
 .topbar-pill:hover {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: #fff;
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+  color: var(--ink);
 }
 
 /* ── CHAT ── */
@@ -494,13 +495,13 @@ body {
   scroll-behavior: smooth;
 }
 
-.chat::-webkit-scrollbar { width: 6px; }
+.chat::-webkit-scrollbar { width: 5px; }
 .chat::-webkit-scrollbar-track { background: transparent; }
 .chat::-webkit-scrollbar-thumb {
-  background: #d4d3cc;
+  background: rgba(255,255,255,0.15);
   border-radius: 3px;
 }
-.chat::-webkit-scrollbar-thumb:hover { background: #b5b4ae; }
+.chat::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
 /* ── MESSAGES ── */
 .message {
@@ -525,10 +526,13 @@ body {
 }
 
 .user .bubble {
-  background: var(--ink);
-  color: #f5f4f0;
+  background: rgba(139,92,246,0.22);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  color: rgba(255,255,255,0.95);
+  border: 1px solid rgba(167,139,250,0.35);
   border-top-right-radius: 5px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
   font-size: 14.5px;
 }
 
@@ -537,20 +541,23 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%);
   pointer-events: none;
 }
 
 .ai .bubble {
-  background: #ffffff;
-  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.12);
   border-top-left-radius: 5px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
+  color: var(--ink);
 }
 
 .ai .bubble:hover {
-  border-color: #d0cfc8;
-  box-shadow: 0 10px 36px rgba(0,0,0,0.09);
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.09);
   transition: all 0.25s ease;
 }
 
@@ -564,8 +571,9 @@ body {
 
 .thinking-dot {
   width: 6px; height: 6px;
-  background: var(--muted);
+  background: var(--accent);
   border-radius: 50%;
+  opacity: 0.6;
   animation: thinkingDot 1.3s ease infinite;
 }
 .thinking-dot:nth-child(2) { animation-delay: 0.18s; }
@@ -576,12 +584,11 @@ body {
 .bubble p:last-child { margin-bottom: 0; }
 
 .bubble h1, .bubble h2, .bubble h3, .bubble h4 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-style: italic;
+  font-family: var(--font-body);
+  font-weight: 600;
   color: var(--ink);
   letter-spacing: -0.01em;
-  line-height: 1.2;
+  line-height: 1.25;
   margin: 18px 0 8px;
 }
 
@@ -592,22 +599,23 @@ body {
 .bubble h3 { font-size: 17px; }
 .bubble h4 { font-size: 15px; }
 
-.bubble strong { font-weight: 600; }
+.bubble strong { font-weight: 600; color: rgba(255,255,255,0.98); }
 .bubble em { font-style: italic; }
 
 .bubble code {
-  background: var(--panel-soft);
-  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.14);
   border-radius: var(--radius-xs);
   padding: 2px 6px;
   font-family: var(--font-mono);
   font-size: 0.87em;
-  color: var(--ink);
+  color: #c4b5fd;
 }
 
 .bubble pre {
-  background: #0e0e0c;
-  color: #f0efe9;
+  background: rgba(0,0,0,0.3);
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-sm);
   margin: 12px 0;
   overflow: auto;
@@ -637,7 +645,7 @@ body {
 
 .table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
 .table-wrap::-webkit-scrollbar-thumb {
-  background: #d4d3cc;
+  background: rgba(255,255,255,0.15);
   border-radius: 3px;
 }
 
@@ -645,11 +653,11 @@ body {
   width: max-content;
   min-width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
+  background: rgba(0,0,0,0.2);
 }
 
 .bubble th, .bubble td {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: 10px 14px;
   text-align: left;
   vertical-align: top;
@@ -657,10 +665,10 @@ body {
 }
 
 .bubble th {
-  background: #f2f1ec;
-  color: var(--ink);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink-soft);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11.5px;
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -670,7 +678,7 @@ body {
 }
 
 .bubble tr:last-child td { border-bottom: none; }
-.bubble tr:hover td { background: #fafaf7; transition: background 0.15s; }
+.bubble tr:hover td { background: rgba(255,255,255,0.04); transition: background 0.15s; }
 .bubble th:first-child, .bubble td:first-child { min-width: 16ch; }
 
 /* ── SOURCES ── */
@@ -684,9 +692,9 @@ body {
 }
 
 .source {
-  background: #ffffff;
-  border: 1px solid var(--ink);
-  color: var(--ink);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 11px;
@@ -703,7 +711,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--ink);
+  background: var(--accent);
   transform: translateX(-100%);
   transition: transform 0.2s var(--ease-out);
   z-index: 0;
@@ -714,7 +722,7 @@ body {
 .source:hover {
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 14px rgba(124,109,247,0.35);
 }
 
 .source:hover::before { transform: translateX(0); }
@@ -723,52 +731,145 @@ body {
 
 /* ── INPUT AREA ── */
 .input-area {
-  border-top: 1px solid var(--line);
-  padding: 16px 36px 22px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 28px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* PDF chip — shown when a file is loaded */
+.input-attachment {
+  display: none;
+  padding: 8px 0 6px;
+}
+
+.pdf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(167,139,250,0.14);
+  border: 1px solid rgba(167,139,250,0.32);
+  border-radius: 8px;
+  padding: 5px 10px 5px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  transition: all 0.2s ease;
+  max-width: 340px;
+}
+
+.pdf-chip:hover {
+  background: rgba(167,139,250,0.22);
+  border-color: rgba(167,139,250,0.5);
+  transform: translateY(-1px);
+}
+
+.chip-icon { flex-shrink: 0; opacity: 0.8; }
+
+.chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.chip-badge {
+  font-size: 9px;
+  font-weight: 600;
+  background: rgba(167,139,250,0.2);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Input row: attach + textarea + send */
+.input-row {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  width: 100%;
+}
+
+/* Attachment/paperclip button */
+.attach-btn {
+  position: relative;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
-  min-height: 90px;
-  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all 0.2s var(--ease-out);
+  overflow: hidden;
+}
+
+.attach-btn:hover {
+  background: rgba(167,139,250,0.15);
+  border-color: rgba(167,139,250,0.38);
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(167,139,250,0.2);
+}
+
+.attach-btn:active { transform: translateY(0); }
+
+.attach-btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
 }
 
 textarea {
   flex: 1 1 auto;
   min-width: 0;
-  height: 54px;
+  height: 52px;
   max-height: 140px;
-  background: var(--panel-soft);
-  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
   outline: none;
   color: var(--ink);
   resize: none;
   border-radius: var(--radius);
   padding: 14px 18px;
-  min-height: 54px;
+  min-height: 52px;
   font-size: 14.5px;
   font-family: var(--font-body);
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: all 0.25s var(--ease-out);
   line-height: 1.55;
 }
 
 textarea:focus {
-  border-color: var(--line-dark);
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(14,14,12,0.06), var(--shadow-sm);
+  border-color: rgba(167,139,250,0.5);
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.12);
 }
 
-textarea::placeholder { color: #a0a09a; }
+textarea::placeholder { color: rgba(255,255,255,0.3); }
 
 #sendBtn {
-  height: 54px;
+  height: 52px;
   padding: 0 22px;
-  background: var(--ink);
-  color: #f5f4f0;
+  background: linear-gradient(135deg, #7c6df7 0%, #5a4dcc 100%);
+  color: #ffffff;
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -780,13 +881,14 @@ textarea::placeholder { color: #a0a09a; }
   letter-spacing: 0.02em;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(124,109,247,0.45);
 }
 
 #sendBtn::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -799,18 +901,18 @@ textarea::placeholder { color: #a0a09a; }
 }
 
 #sendBtn:hover {
-  background: #2a2a28;
+  background: linear-gradient(135deg, #8b7cfa 0%, #6b5fdc 100%);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 28px rgba(124,109,247,0.55);
 }
 
 #sendBtn:active {
   transform: translateY(0);
-  box-shadow: none;
+  box-shadow: 0 2px 10px rgba(124,109,247,0.3);
 }
 
 #sendBtn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -820,46 +922,46 @@ textarea::placeholder { color: #a0a09a; }
 .pdf-modal {
   position: fixed;
   inset: 0;
-  background: rgba(245,244,240,0.97);
+  background: rgba(5,3,18,0.88);
   z-index: 9999;
   display: none;
   flex-direction: column;
   animation: fadeIn 0.25s var(--ease-out) forwards;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.pdf-toolbar {
-  height: 66px;
-  background: rgba(255,255,255,0.95);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
+.pdf-toolbar {
+  height: 62px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: var(--ink);
+}
+
 #pdfPageInfo {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--ink-soft);
   text-transform: uppercase;
 }
 
 #closePdfBtn {
-  height: 36px;
-  padding: 0 18px;
+  height: 34px;
+  padding: 0 16px;
   border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--ink);
+  background: transparent;
+  color: var(--ink-soft);
   border-radius: 999px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
@@ -867,9 +969,10 @@ textarea::placeholder { color: #a0a09a; }
 }
 
 #closePdfBtn:hover {
-  background: var(--ink);
-  color: #f5f4f0;
-  border-color: var(--ink);
+  background: #e53e3e;
+  color: #fff;
+  border-color: #e53e3e;
+  box-shadow: 0 4px 14px rgba(229,62,62,0.3);
 }
 
 .pdf-viewer {
@@ -878,12 +981,12 @@ textarea::placeholder { color: #a0a09a; }
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 40px;
+  padding: 36px;
 }
 
 .pdf-viewer::-webkit-scrollbar { width: 8px; height: 8px; }
 .pdf-viewer::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: rgba(255,255,255,0.2);
   border-radius: 4px;
 }
 
@@ -893,7 +996,7 @@ textarea::placeholder { color: #a0a09a; }
   background: white;
   border-radius: 6px;
   display: block;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
 }
 
 #highlightLayer {
@@ -904,10 +1007,11 @@ textarea::placeholder { color: #a0a09a; }
 
 .highlight {
   position: absolute;
-  background: rgba(14,14,12,0.08);
-  border: 1.5px solid rgba(14,14,12,0.5);
+  background: rgba(251,191,36,0.22);
+  border: 1.5px solid rgba(251,191,36,0.7);
   pointer-events: none;
   border-radius: 2px;
+  box-shadow: 0 0 6px rgba(251,191,36,0.15);
 }
 
 /* ── SECTION HEADING ── */
@@ -924,11 +1028,11 @@ textarea::placeholder { color: #a0a09a; }
 
 .section-heading-index {
   flex: 0 0 auto;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 17px;
-  font-style: italic;
-  font-weight: 400;
+  font-weight: 600;
   white-space: nowrap;
+  color: var(--accent);
 }
 
 .section-heading-title {
@@ -942,20 +1046,148 @@ textarea::placeholder { color: #a0a09a; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 6px;
+}
+
+.empty-hint .em-greeting {
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .empty-hint .em-title {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 17px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 20px;
   color: var(--ink);
+  line-height: 1.3;
 }
 
 .empty-hint .em-sub {
-  font-size: 13px;
-  color: var(--muted);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  max-width: 380px;
+}
+
+/* ── SIDEBAR COLLAPSE ── */
+.sidebar {
+  transition: min-width 0.3s var(--ease-out), opacity 0.3s ease;
+}
+.container.sidebar-collapsed .sidebar {
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── SIDEBAR TOGGLE BUTTON ── */
+.sidebar-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--ink);
+  border-color: rgba(255,255,255,0.18);
+}
+
+/* ── DOCUMENT INFO PANEL ── */
+.doc-panel {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--sidebar-line);
+  animation: fadeUp 0.4s 0.1s var(--ease-out) both;
+}
+
+.doc-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  padding: 12px 13px;
+}
+
+.doc-card-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.7;
+  margin-top: 1px;
+}
+
+.doc-card-icon.has-file { opacity: 1; }
+
+.doc-card-body { min-width: 0; flex: 1; }
+
+.doc-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--sidebar-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.doc-name.has-file { color: var(--sidebar-text); }
+
+.doc-meta {
+  font-size: 11px;
   font-family: var(--font-mono);
+  color: var(--sidebar-muted);
+  margin-top: 4px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+/* ── QUICK TIPS PANEL ── */
+.tips-panel {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  animation: fadeUp 0.4s 0.2s var(--ease-out) both;
+}
+
+.tips-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tips-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--sidebar-muted);
+  line-height: 1.5;
+}
+
+.tip-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+  margin-top: 0px;
+  opacity: 0.8;
 }
 
 /* ── RESPONSIVE ── */
@@ -1010,7 +1242,7 @@ textarea::placeholder { color: #a0a09a; }
 <div class="container">
 
   <!-- ── SIDEBAR ── -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-top">
       <div class="brand">
@@ -1022,22 +1254,41 @@ textarea::placeholder { color: #a0a09a; }
       </div>
     </div>
 
-    <div class="document-panel">
-      <div class="panel-label">Active PDF</div>
+    <!-- Document info -->
+    <div class="doc-panel">
+      <div class="panel-label">Active document</div>
+      <div class="doc-card" id="docCard">
+        <div class="doc-card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="doc-card-body">
+          <div class="doc-name" id="sidebarDocName">No document loaded</div>
+          <div class="doc-meta" id="sidebarDocMeta">Upload a PDF to begin</div>
+        </div>
+      </div>
+    </div>
 
-      <button
-        class="pdf-name"
-        id="pdfName"
-        type="button"
-        title="No PDF selected"
-        aria-label="No PDF selected"
-      >No PDF selected</button>
-
-      <label class="upload-btn">
-        <span class="upload-icon">↑</span>
-        Upload PDF
-        <input type="file" id="fileInput" accept=".pdf">
-      </label>
+    <!-- Quick tips -->
+    <div class="tips-panel">
+      <div class="panel-label">How to use</div>
+      <ul class="tips-list">
+        <li>
+          <span class="tip-icon">📎</span>
+          <span>Click the attach button to upload a PDF</span>
+        </li>
+        <li>
+          <span class="tip-icon">💬</span>
+          <span>Ask any question about the document</span>
+        </li>
+        <li>
+          <span class="tip-icon">↗</span>
+          <span>Click a citation pill to view the source page</span>
+        </li>
+        <li>
+          <span class="tip-icon">⏎</span>
+          <span>Enter sends · Shift+Enter adds a new line</span>
+        </li>
+      </ul>
     </div>
 
     <div class="status-card">
@@ -1054,6 +1305,9 @@ textarea::placeholder { color: #a0a09a; }
   <main class="workspace">
 
     <div class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="topbar-title">
         <h2>Ask your PDF</h2>
         <p>Upload a document, ask a question, open cited pages from the answer.</p>
@@ -1062,19 +1316,33 @@ textarea::placeholder { color: #a0a09a; }
     </div>
 
     <div class="chat" id="chat">
-      <div class="message ai">
+      <div class="message ai" id="welcomeMsg">
         <div class="bubble">
           <div class="empty-hint">
-            <span class="em-title">Ready for your document.</span>
-            <span class="em-sub">Upload a PDF to begin.</span>
+            <span class="em-greeting" id="emGreeting"></span>
+            <span class="em-title" id="emTitle"></span>
+            <span class="em-sub" id="emSub"></span>
           </div>
         </div>
       </div>
     </div>
 
     <div class="input-area">
-      <textarea id="input" placeholder="Ask something about the PDF…"></textarea>
-      <button id="sendBtn">Ask →</button>
+      <div class="input-attachment" id="inputAttachment">
+        <button class="pdf-chip" id="pdfName" type="button" title="No PDF selected" aria-label="No PDF selected">
+          <svg class="chip-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="chip-label">No PDF selected</span>
+          <span class="chip-badge">PDF</span>
+        </button>
+      </div>
+      <div class="input-row">
+        <label class="attach-btn upload-btn" title="Upload PDF">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          <input type="file" id="fileInput" accept=".pdf">
+        </label>
+        <textarea id="input" placeholder="Upload a PDF and ask anything…"></textarea>
+        <button id="sendBtn">Send ↑</button>
+      </div>
     </div>
 
   </main>
@@ -1100,7 +1368,7 @@ textarea::placeholder { color: #a0a09a; }
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-const API_KEY_STORAGE_KEY = "YOUR_GROQ_API_KEY_HERE";
+const API_KEY_STORAGE_KEY = "groq_api_key";
 
 const CHUNK_SIZE = 500;
 const CHUNK_OVERLAP = 50;
@@ -1110,6 +1378,7 @@ let uploadedPdf = null;
 let uploadedPdfName = "";
 let chunks = [];
 let embeddings = [];
+let idf = {};
 
 const SAFE_MARKDOWN_TAGS = ["p","h1","h2","h3","h4","strong","em","code","pre","hr","ul","ol","li","div","table","thead","tbody","tr","th","td"];
 const SAFE_MARKDOWN_ATTRS = ["class","aria-hidden"];
@@ -1125,12 +1394,27 @@ function setStatus(text, state) {
 
 function updatePdfName(name) {
   uploadedPdfName = name || "";
-  const pdfName = document.getElementById("pdfName");
-  if (!pdfName) return;
-  pdfName.textContent = uploadedPdfName || "No PDF selected";
-  pdfName.title = uploadedPdfName || "No PDF selected";
-  pdfName.setAttribute("aria-label", uploadedPdfName ? `Open ${uploadedPdfName}` : "No PDF selected");
-  pdfName.classList.toggle("has-file", Boolean(uploadedPdfName));
+  // Input-area chip
+  const chip = document.getElementById("pdfName");
+  if (chip) {
+    const label = chip.querySelector(".chip-label");
+    if (label) label.textContent = uploadedPdfName || "No PDF selected";
+    chip.title = uploadedPdfName || "No PDF selected";
+    chip.setAttribute("aria-label", uploadedPdfName ? `Open ${uploadedPdfName}` : "No PDF selected");
+    chip.classList.toggle("has-file", Boolean(uploadedPdfName));
+  }
+  const row = document.getElementById("inputAttachment");
+  if (row) row.style.display = uploadedPdfName ? "block" : "none";
+  // Sidebar doc card
+  const sidebarName = document.getElementById("sidebarDocName");
+  if (sidebarName) {
+    sidebarName.textContent = uploadedPdfName || "No document loaded";
+    sidebarName.classList.toggle("has-file", Boolean(uploadedPdfName));
+  }
+  const icon = document.querySelector(".doc-card-icon");
+  if (icon) icon.classList.toggle("has-file", Boolean(uploadedPdfName));
+  const meta = document.getElementById("sidebarDocMeta");
+  if (meta && !uploadedPdfName) meta.textContent = "Upload a PDF to begin";
 }
 
 function escapeHtml(text) {
@@ -1252,12 +1536,6 @@ function markdownToHtml(text) {
     }
     if (inCodeBlock) { codeLines.push(line); continue; }
     if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { flushParagraph(paragraphLines,htmlParts); flushList(listItems,listType,htmlParts); listType = null; htmlParts.push("<hr>"); continue; }
-    const splitNumberMatch = line.match(/^\s*(\d+)\.\s*$/);
-    if (splitNumberMatch) {
-      let nextIndex = i + 1;
-      while (nextIndex < lines.length && !lines[nextIndex].trim()) nextIndex++;
-      if (nextIndex < lines.length) { flushParagraph(paragraphLines,htmlParts); flushList(listItems,listType,htmlParts); listType = null; htmlParts.push(`<p><strong>${escapeHtml(splitNumberMatch[1])}.</strong>&nbsp;${renderInlineMarkdown(lines[nextIndex].trim())}</p>`); i = nextIndex; continue; }
-    }
     if (i + 1 < lines.length && isTableRow(line) && isTableSeparator(lines[i + 1])) {
       flushParagraph(paragraphLines,htmlParts); flushList(listItems,listType,htmlParts); listType = null;
       const tableLines = [line, lines[i + 1]]; i += 2;
@@ -1267,8 +1545,8 @@ function markdownToHtml(text) {
     const headingMatch = line.match(/^\s*(#{1,4})\s+(.+)$/);
     if (headingMatch) { flushParagraph(paragraphLines,htmlParts); flushList(listItems,listType,htmlParts); listType = null; const level = headingMatch[1].length; htmlParts.push(`<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`); continue; }
     const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
-    const numberMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
-    if (numberMatch) { flushParagraph(paragraphLines,htmlParts); flushList(listItems,listType,htmlParts); listType = null; htmlParts.push(`<p><strong>${escapeHtml(numberMatch[1])}.</strong>&nbsp;${renderInlineMarkdown(numberMatch[2])}</p>`); continue; }
+    const numberMatch = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (numberMatch) { flushParagraph(paragraphLines,htmlParts); if (listType && listType !== "ol") { flushList(listItems,listType,htmlParts); } listType = "ol"; listItems.push(numberMatch[1]); continue; }
     if (bulletMatch) { flushParagraph(paragraphLines,htmlParts); if (listType && listType !== "ul") { flushList(listItems,listType,htmlParts); } listType = "ul"; listItems.push(bulletMatch[1]); continue; }
     if (!line.trim()) { flushParagraph(paragraphLines,htmlParts); flushList(listItems,listType,htmlParts); listType = null; continue; }
     flushList(listItems,listType,htmlParts); listType = null; paragraphLines.push(line.trim());
@@ -1318,14 +1596,29 @@ function chunkPages(pageTexts) {
 }
 
 async function buildEmbeddings(docs) {
-  const result = [];
+  const tfs = [];
+  const df = {};
+  // Pass 1: compute TF per doc and document frequency per term
   for (let i = 0; i < docs.length; i++) {
     const tf = {};
-    tokenize(docs[i].text).forEach(t => { tf[t] = (tf[t] || 0) + 1; });
-    result.push(tf);
-    if (i % 50 === 0) await new Promise(r=>setTimeout(r,0));
+    const seen = new Set();
+    tokenize(docs[i].text).forEach(t => {
+      tf[t] = (tf[t] || 0) + 1;
+      if (!seen.has(t)) { df[t] = (df[t] || 0) + 1; seen.add(t); }
+    });
+    tfs.push(tf);
+    if (i % 50 === 0) await new Promise(r => setTimeout(r, 0));
   }
-  return result;
+  // Compute IDF: log((N+1)/(df+1))+1 (smoothed to avoid zero for unseen terms)
+  const N = docs.length;
+  idf = {};
+  Object.keys(df).forEach(t => { idf[t] = Math.log((N + 1) / (df[t] + 1)) + 1; });
+  // Pass 2: convert TF → TF-IDF vectors
+  return tfs.map(tf => {
+    const v = {};
+    Object.keys(tf).forEach(t => { v[t] = tf[t] * idf[t]; });
+    return v;
+  });
 }
 
 function cosine(a,b) {
@@ -1337,9 +1630,17 @@ function cosine(a,b) {
 }
 
 function retrieve(query) {
+  const qTf = {};
+  tokenize(query).forEach(t => { qTf[t] = (qTf[t] || 0) + 1; });
+  // Apply IDF to query terms so rare terms in the corpus rank higher
+  const N = embeddings.length;
   const q = {};
-  tokenize(query).forEach(t => { q[t] = (q[t]||0)+1; });
-  return embeddings.map((e,i)=>({index:i,score:cosine(q,e)})).sort((a,b)=>b.score-a.score).slice(0,TOP_K);
+  Object.keys(qTf).forEach(t => {
+    q[t] = qTf[t] * (idf[t] || Math.log((N + 1) / 1) + 1);
+  });
+  return embeddings.map((e, i) => ({ index: i, score: cosine(q, e) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, TOP_K);
 }
 
 function addMessage(role, text, sources=[]) {
@@ -1362,13 +1663,13 @@ function addMessage(role, text, sources=[]) {
     const sourcesDiv = document.createElement("div");
     sourcesDiv.className = "sources";
     sources.forEach(s => {
-      const chunk = chunks[s];
+      const chunk = chunks[s.index];
       if (!chunk) return;
       const sourceBtn = document.createElement("button");
       sourceBtn.type = "button";
       sourceBtn.className = "source";
       sourceBtn.innerHTML = `<span>↗ Page ${chunk.page}</span>`;
-      sourceBtn.addEventListener("click", () => openCitation(chunk.page, s));
+      sourceBtn.addEventListener("click", () => openCitation(chunk.page, s.index, s.keywords, s.answerNorm));
       sourcesDiv.appendChild(sourceBtn);
     });
     bubble.appendChild(sourcesDiv);
@@ -1396,6 +1697,8 @@ async function loadPDF(file) {
     chunks = chunkPages(pageTexts);
     embeddings = await buildEmbeddings(chunks);
     setStatus(`${uploadedPdf.numPages}p · ${chunks.length} chunks indexed`, "active");
+    const meta = document.getElementById("sidebarDocMeta");
+    if (meta) meta.textContent = `${uploadedPdf.numPages} pages · ${chunks.length} chunks indexed`;
     addMessage("ai", `**${file.name}** loaded — ${uploadedPdf.numPages} pages, ${chunks.length} chunks indexed.`);
   } catch(err) {
     updatePdfName("");
@@ -1405,6 +1708,7 @@ async function loadPDF(file) {
 
 async function sendMessage() {
   const input = document.getElementById("input");
+  const sendBtn = document.getElementById("sendBtn");
   const query = input.value.trim();
   if (!query) return;
   if (!uploadedPdf || !chunks.length) { addMessage("ai","Upload a PDF before asking questions."); return; }
@@ -1416,12 +1720,13 @@ async function sendMessage() {
   const apiKey = getApiKey();
   if (!apiKey) { addMessage("ai","A Groq API key is required to answer questions."); return; }
   const thinkingMsg = addMessage("ai","__thinking__");
+  sendBtn.disabled = true;
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: "You are a PDF assistant.\n\nRules:\n- Answer ONLY from the PDF context.\n- Mention relevant details clearly.\n- Use concise Markdown formatting.\n- Use Markdown tables when comparing structured information.\n- In table cells, put each item on a new line; do not put many bullet items on one line.\n- Use hyphen bullets, not Unicode bullet characters.\n- Do not use HTML tags such as <br>; use Markdown formatting instead.\n- Never return raw HTML.\n- If unavailable say:\n\"I could not find this in the PDF.\"" },
           { role: "user", content: `PDF Context:\n\n${context}\n\nQuestion:\n${query}` }
@@ -1434,14 +1739,55 @@ async function sendMessage() {
     thinkingMsg.remove();
     if (!response.ok) { addMessage("ai", data.error?.message || "Groq Error"); return; }
     const answer = data.choices?.[0]?.message?.content || "No response.";
-    addMessage("ai", answer, retrieved.map(r=>r.index));
+
+    // Score each retrieved chunk against the actual answer text (not the query).
+    // This filters out context chunks the AI didn't use in its response.
+    const aTf = {};
+    tokenize(answer).forEach(t => { aTf[t] = (aTf[t] || 0) + 1; });
+    const N = embeddings.length;
+    const aVec = {};
+    Object.keys(aTf).forEach(t => { aVec[t] = aTf[t] * (idf[t] || Math.log((N + 1) / 1) + 1); });
+
+    const scoredByAnswer = retrieved
+      .map(r => ({ index: r.index, score: cosine(aVec, embeddings[r.index]) }))
+      .sort((a, b) => b.score - a.score);
+
+    // Only cite pages whose answer-similarity is >= 50% of the best match.
+    // Fall back to all retrieved if nothing scores above zero.
+    const topScore = scoredByAnswer[0]?.score || 0;
+    const relevant = topScore > 0
+      ? scoredByAnswer.filter(s => s.score >= topScore * 0.5)
+      : scoredByAnswer;
+
+    // For each cited chunk, compute which answer tokens it shares with the chunk —
+    // sorted by IDF so the most document-specific terms come first.
+    const answerTokenSet = new Set(Object.keys(aTf));
+    const seenPages = new Set();
+    const answerNorm = answer.toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
+    const uniqueSources = relevant.filter(r => {
+      const page = chunks[r.index].page;
+      if (seenPages.has(page)) return false;
+      seenPages.add(page);
+      return true;
+    }).map(r => {
+      const chunkTokenSet = new Set(tokenize(chunks[r.index].text));
+      const keywords = [...answerTokenSet]
+        .filter(t => chunkTokenSet.has(t))
+        .sort((a, b) => (idf[b] || 0) - (idf[a] || 0))
+        .slice(0, 20);
+      return { index: r.index, keywords, answerNorm };
+    });
+
+    addMessage("ai", answer, uniqueSources);
   } catch(err) {
     thinkingMsg.remove();
     addMessage("ai", err.message);
+  } finally {
+    sendBtn.disabled = false;
   }
 }
 
-async function openCitation(pageNumber, chunkIndex) {
+async function openCitation(pageNumber, chunkIndex, keywords, answerNorm) {
   const modal = document.getElementById("pdfModal");
   modal.style.display = "flex";
   const page = await uploadedPdf.getPage(pageNumber);
@@ -1456,7 +1802,7 @@ async function openCitation(pageNumber, chunkIndex) {
   layer.replaceChildren();
   await page.render({ canvasContext: ctx, viewport }).promise;
   document.getElementById("pdfPageInfo").textContent = `PAGE ${pageNumber}`;
-  if (typeof chunkIndex === "number") await highlightChunk(page, viewport, chunkIndex);
+  if (typeof chunkIndex === "number") await highlightChunk(page, viewport, chunkIndex, keywords, answerNorm);
   else layer.replaceChildren();
 }
 
@@ -1465,18 +1811,65 @@ async function openCurrentPdf() {
   await openCitation(1);
 }
 
-async function highlightChunk(page, viewport, chunkIndex) {
+async function highlightChunk(page, viewport, chunkIndex, keywords, answerNorm) {
   const layer = document.getElementById("highlightLayer");
   layer.replaceChildren();
   const selectedChunk = chunks[chunkIndex];
   if (!selectedChunk) return;
   const textContent = await page.getTextContent();
-  const normalizeForMatch = v => String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
-  const chunkText = normalizeForMatch(selectedChunk.text);
+  const normalize = v => String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
+
+  const keywordSet = keywords && keywords.length ? new Set(keywords) : null;
+  const chunkNorm = normalize(selectedChunk.text);
+
+  // Build per-item character positions within the concatenated page text so we
+  // can locate which items actually belong to this chunk's region on the page.
+  const itemNorms = textContent.items.map(item => normalize(item.str));
+  const itemStarts = [];
+  const itemEnds = [];
+  let pos = 0;
+  let needSep = false;
+  itemNorms.forEach(t => {
+    if (!t) { itemStarts.push(-1); itemEnds.push(-1); return; }
+    if (needSep) pos++;
+    needSep = true;
+    itemStarts.push(pos);
+    pos += t.length;
+    itemEnds.push(pos);
+  });
+  const pageText = itemNorms.filter(Boolean).join(" ");
+
+  // Find where this chunk's text sits within the full page text.
+  const chunkStart = pageText.indexOf(chunkNorm);
+  const chunkEnd = chunkStart >= 0 ? chunkStart + chunkNorm.length : -1;
+
+  // The text to match phrases against: prefer the answer text (more specific),
+  // fall back to the chunk text.
+  const phraseSource = answerNorm || chunkNorm;
+
   let highlights = 0;
-  textContent.items.forEach(item => {
-    const itemText = normalizeForMatch(item.str);
-    if (itemText.length < 3 || !chunkText.includes(itemText)) return;
+  textContent.items.forEach((item, i) => {
+    const itemText = itemNorms[i];
+    if (!itemText || itemText.length < 2) return;
+
+    // Skip items outside the chunk's region on the page.
+    if (chunkEnd >= 0 && (itemEnds[i] <= chunkStart || itemStarts[i] >= chunkEnd)) return;
+
+    let relevant;
+    if (keywordSet) {
+      const words = itemText.split(/\s+/);
+      // Require multi-word items only: the full item text must appear verbatim
+      // in the answer (or chunk) AND contain at least one keyword.
+      // Single-word items are skipped to avoid highlighting every occurrence of
+      // a common term like "applicant" across the whole page.
+      relevant = words.length >= 2
+        && phraseSource.includes(itemText)
+        && words.some(w => keywordSet.has(w));
+    } else {
+      relevant = chunkNorm.includes(itemText);
+    }
+    if (!relevant) return;
+
     const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
     const x = tx[4], y = tx[5];
     const height = Math.max(Math.abs(tx[3]), item.height * viewport.scale, 8);
@@ -1508,6 +1901,41 @@ document.getElementById("sendBtn").addEventListener("click", sendMessage);
 document.getElementById("closePdfBtn").addEventListener("click", closePdfViewer);
 document.getElementById("pdfName").addEventListener("click", openCurrentPdf);
 document.getElementById("input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+document.getElementById("sidebarToggle").addEventListener("click", () => {
+  document.querySelector(".container").classList.toggle("sidebar-collapsed");
+});
+
+// ── Time-aware greeting ──────────────────────────────────────────────────────
+(function renderGreeting() {
+  const hour = new Date().getHours();
+  let period, emoji, prompt;
+
+  if (hour >= 5 && hour < 12) {
+    period = "Good Morning";
+    emoji  = "☀️";
+    prompt = "What would you like to explore today?";
+  } else if (hour >= 12 && hour < 17) {
+    period = "Good Afternoon";
+    emoji  = "🌤️";
+    prompt = "What can I help you find in your documents?";
+  } else if (hour >= 17 && hour < 21) {
+    period = "Good Evening";
+    emoji  = "🌙";
+    prompt = "Ready to dive into your documents?";
+  } else {
+    period = "Working late?";
+    emoji  = "🌃";
+    prompt = "I'm here whenever you need me.";
+  }
+
+  const greetingEl = document.getElementById("emGreeting");
+  const titleEl    = document.getElementById("emTitle");
+  const subEl      = document.getElementById("emSub");
+
+  if (greetingEl) greetingEl.textContent = `${emoji}  ${period}`;
+  if (titleEl)    titleEl.textContent    = prompt;
+  if (subEl)      subEl.textContent      = "Upload a PDF using the 📎 button below, then ask me anything about it.";
+})();
 
 </script>
 </body>
