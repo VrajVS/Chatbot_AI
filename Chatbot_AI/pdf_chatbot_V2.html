@@ -1740,7 +1740,7 @@ async function sendMessage() {
     }).map(r => {
       const chunkTokenSet = new Set(tokenize(chunks[r.index].text));
       const keywords = [...answerTokenSet]
-        .filter(t => chunkTokenSet.has(t))
+        .filter(t => chunkTokenSet.has(t) && t.length >= 3 && (idf[t] || 0) > 1.3)
         .sort((a, b) => (idf[b] || 0) - (idf[a] || 0))
         .slice(0, 20);
       return { index: r.index, keywords, answerNorm };
@@ -1830,15 +1830,9 @@ async function highlightChunk(page, viewport, chunkIndex, keywords, answerNorm) 
     if (chunkEnd >= 0 && (itemEnds[i] <= chunkStart || itemStarts[i] >= chunkEnd)) return;
 
     let relevant;
-    if (keywordSet) {
+    if (keywordSet && keywordSet.size > 0) {
       const words = itemText.split(/\s+/);
-      // Require multi-word items only: the full item text must appear verbatim
-      // in the answer (or chunk) AND contain at least one keyword.
-      // Single-word items are skipped to avoid highlighting every occurrence of
-      // a common term like "applicant" across the whole page.
-      relevant = words.length >= 2
-        && phraseSource.includes(itemText)
-        && words.some(w => keywordSet.has(w));
+      relevant = words.some(w => keywordSet.has(w));
     } else {
       relevant = chunkNorm.includes(itemText);
     }
