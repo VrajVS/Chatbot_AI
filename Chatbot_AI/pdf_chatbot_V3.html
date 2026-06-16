@@ -772,6 +772,24 @@ let chunks          = [];
 let embeddings      = [];
 let idf             = {};
 
+// Returns true when the LLM answer is a refusal / "not in PDF" response.
+// In that case we skip citation pills — there's nothing to cite.
+function isRefusalAnswer(text) {
+  const t = text.toLowerCase();
+  const phrases = [
+    'not in the pdf','not in the document','not provided in',
+    'no information','cannot find','not mentioned','not available',
+    'document does not','pdf does not','not contain','context does not',
+    'not discussed','unable to find','not found in',
+    'not part of','not covered','not present in','not related to',
+    'not about','outside the scope','outside the pdf',
+    'does not include','does not discuss','does not mention',
+    "i don't have","i do not have","there is no information",
+    'no relevant','not relevant','information is not',
+  ];
+  return phrases.some(p => t.includes(p));
+}
+
 // Common English stop-words excluded from highlight keywords
 const _KW_STOP = new Set([
   'a','an','and','are','as','at','be','been','but','by','can','did',
@@ -1174,8 +1192,10 @@ async function sendMessage() {
 
     // Stream finished normally
     if (!fullText) { streamBubble.replaceChildren(mdFrag("No response.")); return; }
-    const sources = computeCitations(retrieved, fullText);
-    if (sources.length) appendSources(streamBubble, sources);
+    if (!isRefusalAnswer(fullText)) {
+      const sources = computeCitations(retrieved, fullText);
+      if (sources.length) appendSources(streamBubble, sources);
+    }
     chat.scrollTop = chat.scrollHeight;
 
   } catch(err) {
@@ -1193,9 +1213,11 @@ async function sendMessage() {
           badge.className = "stopped-badge";
           badge.textContent = reason === "timeout" ? " [timed out]" : " [stopped]";
           streamBubble.appendChild(badge);
-          // Still cite what was generated
-          const sources = computeCitations(retrieved, fullText);
-          if (sources.length) appendSources(streamBubble, sources);
+          // Still cite what was generated (unless it's a refusal)
+          if (!isRefusalAnswer(fullText)) {
+            const sources = computeCitations(retrieved, fullText);
+            if (sources.length) appendSources(streamBubble, sources);
+          }
         }
       } else {
         // Aborted before the response body started

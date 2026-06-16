@@ -1345,6 +1345,23 @@ let chunks = [];
 let embeddings = [];
 let idf = {};
 
+function isRefusalAnswer(text) {
+  const t = text.toLowerCase();
+  const phrases = [
+    'not in the pdf','not in the document','not provided in',
+    'no information','cannot find','not mentioned','not available',
+    'document does not','pdf does not','not contain','context does not',
+    'not discussed','unable to find','not found in',
+    'not part of','not covered','not present in','not related to',
+    'not about','outside the scope','outside the pdf',
+    'does not include','does not discuss','does not mention',
+    "i don't have","i do not have","there is no information",
+    'no relevant','not relevant','information is not',
+    'could not find this in the pdf','could not find',
+  ];
+  return phrases.some(p => t.includes(p));
+}
+
 const _KW_STOP = new Set([
   'a','an','and','are','as','at','be','been','but','by','can','did',
   'do','for','had','has','have','he','her','him','his','how','if',
@@ -1760,7 +1777,7 @@ async function sendMessage() {
       return { index: r.index, keywords, answerNorm };
     });
 
-    addMessage("ai", answer, uniqueSources);
+    addMessage("ai", answer, isRefusalAnswer(answer) ? [] : uniqueSources);
   } catch(err) {
     thinkingMsg.remove();
     if (err.name === "AbortError" || signal.aborted) {
